@@ -35,6 +35,9 @@ namespace es_script {
         template <typename T_Out>
         T_Out readAtomicInput(const std::string &name) {
             T_Out out;
+            if (*m_inputMap[name].input == nullptr) {
+                return out;
+            }
             (*m_inputMap[name].input)->fullCompute(&out);
 
             return out;
@@ -42,6 +45,10 @@ namespace es_script {
 
         void readAllInputs() {
             for (auto i : m_inputMap) {
+                if (*i.second.input == nullptr) {
+                    continue;
+                }
+
                 if (i.second.type == InputTarget::Type::Atomic
                     || i.second.type == InputTarget::Type::Object)
                 {

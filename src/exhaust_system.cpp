@@ -20,6 +20,7 @@ ExhaustSystem::~ExhaustSystem() {
 }
 
 void ExhaustSystem::initialize(const Parameters &params) {
+    m_parameters = params;
     const double systemWidth = std::sqrt(params.collectorCrossSectionArea);
     const double volume = params.collectorCrossSectionArea * params.length;
     const double systemLength = params.length;
@@ -78,4 +79,22 @@ void ExhaustSystem::process(double dt) {
 
     m_system.dissipateExcessVelocity();
     m_system.updateVelocity(dt, m_velocityDecay);
+}
+
+ExhaustPipe1D::Parameters ExhaustSystem::makePipeParameters(
+    double primaryLength,
+    double primaryArea) const
+{
+    ExhaustPipe1D::Parameters params;
+    params.length = primaryLength + m_length;
+    params.crossSectionArea = primaryArea;
+    params.cellCount = static_cast<int>(std::lround(m_parameters.solverCellCount));
+    params.cfl = m_parameters.solverCfl;
+    params.wallTemperature = m_parameters.wallTemperature;
+    params.wallHeatTransfer = m_parameters.wallHeatTransfer;
+    params.wallFriction = m_parameters.wallFriction;
+    params.outletReflection = m_parameters.outletReflection;
+    params.outletReflectionCutoff = m_parameters.outletReflectionCutoff;
+    params.limiter = ExhaustPipe1D::limiterFromName(m_parameters.solverLimiter);
+    return params;
 }

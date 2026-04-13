@@ -62,6 +62,13 @@ struct PcmWave {
     std::vector<int16_t> samples;
 };
 
+struct ClipAudioDiagnostics {
+    int peak = 0;
+    int clippingSamples = 0;
+    double rms = 0.0;
+    double spectralCentroidHz = 0.0;
+};
+
 void printUsage() {
     std::cout
         << "Usage: engine-sim-exporter [options]\n"
@@ -427,6 +434,55 @@ void writeManifest(
     }
 }
 
+ClipAudioDiagnostics analyzeClipAudio(const std::vector<int16_t> &samples) {
+    ClipAudioDiagnostics diagnostics;
+    if (samples.empty()) {
+        return diagnostics;
+    }
+
+    double sumSquares = 0.0;
+    for (const int16_t sample : samples) {
+        const int absSample = std::abs(static_cast<int>(sample));
+        diagnostics.peak = std::max(diagnostics.peak, absSample);
+        if (absSample >= INT16_MAX - 1) {
+            ++diagnostics.clippingSamples;
+        }
+
+        sumSquares += static_cast<double>(sample) * static_cast<double>(sample);
+    }
+    diagnostics.rms = std::sqrt(sumSquares / samples.size());
+
+    constexpr int WindowSize = 2048;
+    const int n = std::min(WindowSize, static_cast<int>(samples.size()));
+    if (n > 32) {
+        double weightedMagnitude = 0.0;
+        double totalMagnitude = 0.0;
+        const int maxBin = n / 2;
+        for (int bin = 1; bin <= maxBin; ++bin) {
+            double real = 0.0;
+            double imag = 0.0;
+            for (int i = 0; i < n; ++i) {
+                const double window = 0.5 - 0.5 * std::cos((2.0 * constants::pi * i) / (n - 1));
+                const double phase = (2.0 * constants::pi * bin * i) / n;
+                const double sample = window * samples[i];
+                real += sample * std::cos(phase);
+                imag -= sample * std::sin(phase);
+            }
+
+            const double magnitude = std::sqrt(real * real + imag * imag);
+            const double frequency = (AudioSampleRate * bin) / static_cast<double>(n);
+            weightedMagnitude += frequency * magnitude;
+            totalMagnitude += magnitude;
+        }
+
+        if (totalMagnitude > 0.0) {
+            diagnostics.spectralCentroidHz = weightedMagnitude / totalMagnitude;
+        }
+    }
+
+    return diagnostics;
+}
+
 void addFallbackVehicleAndTransmission(LoadedSimulation *loaded) {
     if (loaded->vehicle == nullptr) {
         Vehicle::Parameters vehParams;
@@ -717,6 +773,7 @@ void exportClip(
     double durationSeconds)
 {
     writeWav(path, samples);
+    const ClipAudioDiagnostics diagnostics = analyzeClipAudio(samples);
 
     manifest->push_back({
         path.filename().string(),
@@ -727,7 +784,13 @@ void exportClip(
         durationSeconds,
     });
 
-    std::cout << "Wrote " << path.string() << '\n';
+    std::cout
+        << "Wrote " << path.string()
+        << " | peak=" << diagnostics.peak
+        << " rms=" << static_cast<int>(std::lround(diagnostics.rms))
+        << " clip_samples=" << diagnostics.clippingSamples
+        << " centroid_hz=" << static_cast<int>(std::lround(diagnostics.spectralCentroidHz))
+        << '\n';
 }
 
 std::vector<int> defaultRpmTargets(const Engine & /* engine */) {

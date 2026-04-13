@@ -3,22 +3,33 @@
 
 #include "part.h"
 
+#include "exhaust_pipe_1d.h"
 #include "gas_system.h"
 #include "impulse_response.h"
+
+#include <string>
 
 class ExhaustSystem : public Part {
     friend class Engine;
 
     public:
         struct Parameters {
-            double length;
-            double collectorCrossSectionArea;
-            double outletFlowRate;
-            double primaryTubeLength;
-            double primaryFlowRate;
-            double velocityDecay;
-            double audioVolume;
-            ImpulseResponse *impulseResponse;
+            double length = 1.0;
+            double collectorCrossSectionArea = 0.001;
+            double outletFlowRate = 0.0;
+            double primaryTubeLength = 0.0;
+            double primaryFlowRate = 0.0;
+            double velocityDecay = 1.0;
+            double audioVolume = 1.0;
+            double solverCellCount = 24.0;
+            double solverCfl = 0.45;
+            double wallTemperature = units::celcius(120.0);
+            double wallHeatTransfer = 18.0;
+            double wallFriction = 12.0;
+            double outletReflection = 0.35;
+            double outletReflectionCutoff = 1800.0;
+            std::string solverLimiter = "mc";
+            ImpulseResponse *impulseResponse = nullptr;
         };
 
     public:
@@ -39,14 +50,17 @@ class ExhaustSystem : public Part {
         inline double getPrimaryTubeLength() const { return m_primaryTubeLength; }
         inline double getVelocityDecay() const { return m_velocityDecay; }
         inline ImpulseResponse *getImpulseResponse() const { return m_impulseResponse; }
+        inline const Parameters &getParameters() const { return m_parameters; }
 
         inline GasSystem *getSystem() { return &m_system; }
+        ExhaustPipe1D::Parameters makePipeParameters(double primaryLength, double primaryArea) const;
 
     protected:
         GasSystem m_atmosphere;
         GasSystem m_system;
 
         ImpulseResponse *m_impulseResponse;
+        Parameters m_parameters;
 
         double m_length;
         double m_primaryTubeLength;

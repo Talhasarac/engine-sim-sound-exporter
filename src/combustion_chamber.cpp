@@ -107,11 +107,16 @@ void CombustionChamber::initialize(const Parameters &params) {
         exhaustRunnerWidth,
         1.0,
         0.0);
+
+    m_exhaustPipe.initialize(exhaust->makePipeParameters(
+        exhaustTubeLength,
+        exhaustRunnerCrossSection));
 }
 
 void CombustionChamber::destroy() {
     if (m_pistonSpeed != nullptr) delete[] m_pistonSpeed;
     if (m_pressure != nullptr) delete[] m_pressure;
+    m_exhaustPipe.destroy();
 
     m_pistonSpeed = nullptr;
     m_pressure = nullptr;
@@ -279,30 +284,20 @@ void CombustionChamber::flow(double dt) {
     m_intakeRunnerAndManifold.dissipateExcessVelocity();
     m_system.dissipateExcessVelocity();
 
-    flowParams.k_flow = m_exhaustFlowRate;
-    flowParams.crossSectionArea_0 = volume / cylinderHeight;
-    flowParams.crossSectionArea_1 = m_head->getExhaustRunnerCrossSectionArea();
-    flowParams.direction_x = 1.0;
-    flowParams.direction_y = 0.0;
-    flowParams.system_0 = &m_system;
-    flowParams.system_1 = &m_exhaustRunnerAndPrimary;
-    const double exhaustFlow = GasSystem::flow(flowParams);
+    const double exhaustFlow = m_exhaustPipe.process(
+        dt,
+        &m_system,
+        exhaust->getSystem(),
+        m_exhaustFlowRate,
+        m_primaryToCollectorFlowRate);
 
     m_system.dissipateExcessVelocity();
-    m_exhaustRunnerAndPrimary.dissipateExcessVelocity();
-
-    flowParams.k_flow = m_primaryToCollectorFlowRate;
-    flowParams.crossSectionArea_0 = m_head->getExhaustRunnerCrossSectionArea();
-    flowParams.crossSectionArea_1 = exhaust->getCollectorCrossSectionArea();
-    flowParams.direction_x = 1.0;
-    flowParams.direction_y = 0.0;
-    flowParams.system_0 = &m_exhaustRunnerAndPrimary;
-    flowParams.system_1 = exhaust->getSystem();
-    GasSystem::flow(flowParams);
+    m_exhaustRunnerAndPrimary.reset(
+        m_exhaustPipe.inletPressure(),
+        units::celcius(25.0));
 
     m_intakeRunnerAndManifold.updateVelocity(dt, intake->getVelocityDecay());
     m_system.updateVelocity(dt, 0.5);
-    m_exhaustRunnerAndPrimary.updateVelocity(dt, exhaust->getVelocityDecay());
 
     if (std::abs(intakeFlow) > 1E-9 && m_lit) {
         m_lit = false;

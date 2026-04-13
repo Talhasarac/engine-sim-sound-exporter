@@ -60,6 +60,7 @@ add_library(engine-sim STATIC
     src/direct_throttle_linkage.cpp
     src/dynamometer.cpp
     src/engine.cpp
+    src/exhaust_pipe_1d.cpp
     src/exhaust_system.cpp
     src/feedback_comb_filter.cpp
     src/filter.cpp
@@ -104,6 +105,7 @@ add_library(engine-sim STATIC
     include/direct_throttle_linkage.h
     include/dynamometer.h
     include/engine.h
+    include/exhaust_pipe_1d.h
     include/exhaust_system.h
     include/feedback_comb_filter.h
     include/filter.h
@@ -333,6 +335,7 @@ enable_testing()
 add_executable(engine-sim-test
     # Source files
     test/gas_system_tests.cpp
+    test/exhaust_pipe_1d_tests.cpp
     test/function_test.cpp
     test/synthesizer_tests.cpp
 )

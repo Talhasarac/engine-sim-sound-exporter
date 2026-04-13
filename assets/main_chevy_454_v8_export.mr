@@ -1,0 +1,6 @@
+import "engine_sim.mr"
+import "themes/default.mr"
+import "engines/chevrolet/chev_truck_454.mr"
+
+use_default_theme()
+set_engine(chev_truck_454())

@@ -1,0 +1,6 @@
+import "engine_sim.mr"
+import "themes/default.mr"
+import "engines/bmw/M62B44_like_v8.mr"
+
+use_default_theme()
+set_engine(bmw_m62b44_like_v8())

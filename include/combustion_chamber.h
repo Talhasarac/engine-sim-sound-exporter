@@ -4,6 +4,7 @@
 #include "scs.h"
 
 #include "piston.h"
+#include "exhaust_pipe_1d.h"
 #include "gas_system.h"
 #include "cylinder_head.h"
 #include "units.h"
@@ -71,6 +72,8 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         double lastEventAfr() const;
 
         double getLastIterationExhaustFlow() const { return m_exhaustFlow; }
+        double getExhaustAudioSignal() const { return m_exhaustPipe.outletAudioSignal(); }
+        const ExhaustPipe1D &getExhaustPipe() const { return m_exhaustPipe; }
 
         void resetLastTimestepExhaustFlow() { m_lastTimestepTotalExhaustFlow = 0; }
         double getLastTimestepExhaustFlow() const { return m_lastTimestepTotalExhaustFlow; }
@@ -82,6 +85,7 @@ class CombustionChamber : public atg_scs::ForceGenerator {
         GasSystem m_system;
         GasSystem m_intakeRunnerAndManifold;
         GasSystem m_exhaustRunnerAndPrimary;
+        ExhaustPipe1D m_exhaustPipe;
         FlameEvent m_flameEvent;
         bool m_lit;
 

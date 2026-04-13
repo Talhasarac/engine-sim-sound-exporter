@@ -34,6 +34,14 @@ namespace es_script {
             addInput("primary_flow_rate", &m_parameters.primaryFlowRate);
             addInput("audio_volume", &m_parameters.audioVolume);
             addInput("velocity_decay", &m_parameters.velocityDecay);
+            addInput("solver_cell_count", &m_parameters.solverCellCount);
+            addInput("solver_cfl", &m_parameters.solverCfl);
+            addInput("wall_temperature", &m_parameters.wallTemperature);
+            addInput("wall_heat_transfer", &m_parameters.wallHeatTransfer);
+            addInput("wall_friction", &m_parameters.wallFriction);
+            addInput("outlet_reflection", &m_parameters.outletReflection);
+            addInput("outlet_reflection_cutoff", &m_parameters.outletReflectionCutoff);
+            addInput("solver_limiter", &m_parameters.solverLimiter);
             addInput("impulse_response", &m_impulseResponse, InputTarget::Type::Object);
 
             ObjectReferenceNode<ExhaustSystemNode>::registerInputs();
