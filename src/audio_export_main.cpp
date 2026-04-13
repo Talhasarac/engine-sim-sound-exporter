@@ -24,6 +24,9 @@ namespace {
 constexpr int AudioSampleRate = 44100;
 constexpr double OfflineFrameSeconds = 0.01;
 constexpr double LoopSeamSearchSeconds = 0.5;
+constexpr int DefaultRpmAnchorSet[] = {
+    800, 1000, 1250, 1500, 1750, 2000, 2500, 3000, 3500, 4000, 4750, 5500, 6250
+};
 
 struct ExportOptions {
     std::filesystem::path scriptPath;
@@ -68,7 +71,9 @@ void printUsage() {
         << "  --out <directory>     Output directory. Default: exports/unity_audio\n"
         << "  --duration <seconds>  Clip length. Default: 5\n"
         << "  --warmup <seconds>    Warmup before steady RPM captures. Default: 3\n"
-        << "  --rpm <list>          Comma-separated RPM targets, for example 1000,2000,3000.\n"
+        << "  --rpm <list>          Comma-separated RPM targets. When omitted, defaults to\n"
+        << "                        800,1000,1250,1500,1750,2000,2500,3000,3500,4000,\n"
+        << "                        4750,5500,6250.\n"
         << "  --throttle <list>     Comma-separated throttle percentages. Default: 30,70,100\n"
         << "  --no-startup          Skip startup_5s.wav.\n"
         << "  --no-ignition-off     Skip ignition_off_5s.wav.\n"
@@ -725,22 +730,8 @@ void exportClip(
     std::cout << "Wrote " << path.string() << '\n';
 }
 
-std::vector<int> defaultRpmTargets(const Engine &engine) {
-    const int minRpm = std::max(1000, static_cast<int>(std::round(units::toRpm(engine.getDynoMinSpeed()))));
-    const int maxByDyno = static_cast<int>(std::round(units::toRpm(engine.getDynoMaxSpeed())));
-    const int maxByRedline = static_cast<int>(std::round(units::toRpm(engine.getRedline()) * 0.9));
-    const int maxRpm = std::max(minRpm, std::min(maxByDyno, maxByRedline));
-
-    std::vector<int> targets;
-    for (int rpm = minRpm; rpm <= maxRpm; rpm += 1000) {
-        targets.push_back(rpm);
-    }
-
-    if (targets.empty()) {
-        targets.push_back(1000);
-    }
-
-    return targets;
+std::vector<int> defaultRpmTargets(const Engine & /* engine */) {
+    return std::vector<int>(std::begin(DefaultRpmAnchorSet), std::end(DefaultRpmAnchorSet));
 }
 
 void exportStartup(
