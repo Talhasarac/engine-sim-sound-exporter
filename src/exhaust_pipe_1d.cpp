@@ -90,9 +90,13 @@ double ExhaustPipe1D::process(
     }
 
     const Primitive outlet = primitiveFromConservative(m_cells.back());
+    const double noise = (2.0 * ((double)rand() / RAND_MAX) - 1.0);
+    const double turbulence = 0.12 * noise * outlet.rho * std::abs(outlet.u) * std::abs(outlet.u);
+
     m_outletAudioSignal =
         ((outlet.p - AtmosphericPressure)
-            + 0.06 * outlet.rho * outlet.u * std::abs(outlet.u))
+            + 0.06 * outlet.rho * outlet.u * std::abs(outlet.u)
+            + turbulence)
         * (400.0 / AtmosphericPressure);
 
     return valveFlow;
