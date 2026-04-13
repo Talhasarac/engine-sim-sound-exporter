@@ -83,6 +83,31 @@ cmake --build .
 
 If these steps are successful, a Visual Studio solution will be generated in ```build```. You can open this project with Visual Studio and then run the ```engine-sim-app``` project. If you encounter an error telling you that you're missing DLLs, you will have to copy those DLLs to your EXE's directory.
 
+### Exporting Unity-ready WAV clips
+This fork also builds a console exporter named `engine-sim-exporter`. It loads the same `assets/main.mr` engine script and writes 44.1 kHz, 16-bit, mono WAV clips plus `unity_audio_manifest.csv`.
+
+Default export set:
+- startup clip
+- steady RPM loop clips at 30%, 70%, and 100% throttle
+- ignition-off shutdown clip
+
+Steady RPM loop clips render extra tail audio, search for a quiet wrap point, and apply a short crossfade into the clip head so Unity can loop the file at the start/end boundary without a hard click. Adjust that smoothing with `--loop-crossfade <milliseconds>`.
+
+Exporter-only build, useful on machines without SDL2:
+
+```
+cmake -S . -B build -DBUILD_APP=OFF -DDISCORD_ENABLED=OFF
+cmake --build build --target engine-sim-exporter --config Release
+```
+
+Run from the repo root:
+
+```
+build\Release\engine-sim-exporter.exe --out exports\unity_audio --duration 5 --rpm 1000,2000,3000,4000,5000 --throttle 30,70,100
+```
+
+Use `--script path\to\engine.mr` to export a different engine script. Use `--help` for the full option list.
+
 ## Patreon Supporters
 
 This project was made possible by the generous donations of the following individuals!

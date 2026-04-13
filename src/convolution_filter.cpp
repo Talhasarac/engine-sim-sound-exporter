@@ -32,9 +32,15 @@ void ConvolutionFilter::destroy() {
 
     m_shiftRegister = nullptr;
     m_impulseResponse = nullptr;
+    m_sampleCount = 0;
+    m_shiftOffset = 0;
 }
 
 float ConvolutionFilter::f(float sample) {
+    if (m_sampleCount <= 0) {
+        return sample;
+    }
+
     m_shiftRegister[m_shiftOffset] = sample;
 
     float result = 0;

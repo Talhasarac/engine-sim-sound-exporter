@@ -31,9 +31,9 @@ PistonEngineSimulator::~PistonEngineSimulator() {
     assert(m_cylinderWallConstraints == nullptr);
     assert(m_linkConstraints == nullptr);
     assert(m_crankshaftFrictionConstraints == nullptr);
+    assert(m_crankshaftLinks == nullptr);
     assert(m_exhaustFlowStagingBuffer == nullptr);
     assert(m_delayFilters == nullptr);
-    assert(m_antialiasingFilters == nullptr);
 }
 
 void PistonEngineSimulator::loadSimulation(Engine *engine, Vehicle *vehicle, Transmission *transmission) {
@@ -344,12 +344,15 @@ void PistonEngineSimulator::endFrame() {
 }
 
 void PistonEngineSimulator::destroy() {
+    Simulator::destroy();
+
     if (m_system != nullptr) m_system->reset();
 
     if (m_crankConstraints != nullptr) delete[] m_crankConstraints;
     if (m_cylinderWallConstraints != nullptr) delete[] m_cylinderWallConstraints;
     if (m_linkConstraints != nullptr) delete[] m_linkConstraints;
     if (m_crankshaftFrictionConstraints != nullptr) delete[] m_crankshaftFrictionConstraints;
+    if (m_crankshaftLinks != nullptr) delete[] m_crankshaftLinks;
     if (m_exhaustFlowStagingBuffer != nullptr) delete[] m_exhaustFlowStagingBuffer;
     if (m_system != nullptr) delete m_system;
     if (m_delayFilters != nullptr) delete[] m_delayFilters;
@@ -358,6 +361,7 @@ void PistonEngineSimulator::destroy() {
     m_cylinderWallConstraints = nullptr;
     m_linkConstraints = nullptr;
     m_crankshaftFrictionConstraints = nullptr;
+    m_crankshaftLinks = nullptr;
     m_exhaustFlowStagingBuffer = nullptr;
     m_system = nullptr;
 

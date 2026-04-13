@@ -1,7 +1,6 @@
 #include "../include/synthesizer.h"
 
 #include "../include/utilities.h"
-#include "../include/delta.h"
 
 #include <cassert>
 #include <cmath>
@@ -127,6 +126,8 @@ void Synthesizer::destroy() {
     for (int i = 0; i < m_inputChannelCount; ++i) {
         m_inputChannels[i].data.destroy();
         m_filters[i].convolution.destroy();
+        delete[] m_inputChannels[i].transferBuffer;
+        m_inputChannels[i].transferBuffer = nullptr;
     }
 
     delete[] m_inputChannels;
@@ -229,6 +230,26 @@ void Synthesizer::renderAudio() {
         return !m_run || (inputAvailable && !m_processed);
     });
 
+    if (!m_run) {
+        return;
+    }
+
+    lk0.unlock();
+    renderAudioNonblocking();
+}
+
+#undef max
+bool Synthesizer::renderAudioNonblocking() {
+    std::unique_lock<std::mutex> lk0(m_lock0);
+
+    if (m_inputChannelCount <= 0
+        || m_processed
+        || m_inputChannels[0].data.size() == 0
+        || m_audioBuffer.size() >= 2000)
+    {
+        return false;
+    }
+
     const int n = std::min(
         std::max(0, 2000 - (int)m_audioBuffer.size()),
         (int)m_inputChannels[0].data.size());
@@ -253,6 +274,7 @@ void Synthesizer::renderAudio() {
     }
 
     m_cv0.notify_one();
+    return true;
 }
 
 double Synthesizer::getLatency() const {
@@ -308,8 +330,11 @@ int16_t Synthesizer::renderAudio(int inputSample) {
             v_in = 0;
         }
 
+        const float v_convolved = (m_filters[i].convolution.getSampleCount() > 0)
+            ? m_filters[i].convolution.f(v_in)
+            : v_in;
         const float v =
-            convAmount * m_filters[i].convolution.f(v_in)
+            convAmount * v_convolved
             + (1 - convAmount) * v_in;
 
         signal += v;
